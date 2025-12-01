@@ -1,0 +1,944 @@
+{
+  "name": "Review Aggregator and AI Alerts for Google, Facebook, Trustpilot, and Yelp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "3837da25-b576-42b2-9786-503d1382450b",
+      "name": "Daily Schedule - 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3056,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "googleApiUrl",
+              "value": "<__PLACEHOLDER_VALUE__Google My Business API endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "facebookApiUrl",
+              "value": "<__PLACEHOLDER_VALUE__Facebook Graph API endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "trustpilotApiUrl",
+              "value": "<__PLACEHOLDER_VALUE__Trustpilot API endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "yelpApiUrl",
+              "value": "<__PLACEHOLDER_VALUE__Yelp Fusion API endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "slackChannel",
+              "value": "<__PLACEHOLDER_VALUE__Slack channel ID for alerts__>",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "managerEmail",
+              "value": "<__PLACEHOLDER_VALUE__Manager email for weekly reports__>",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "sheetsDocumentId",
+              "value": "<__PLACEHOLDER_VALUE__Google Sheets document ID__>",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "sheetsSheetName",
+              "value": "Reviews",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "2f38e74c-e7db-4105-9d85-63e2207e847f",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2832,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Workflow Configuration').first().json.googleApiUrl }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "updated_after",
+              "value": "={{ $now.minus({ days: 1 }).toISO() }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ GOOGLE_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "172af274-273f-4344-a988-7687abd6fc5d",
+      "name": "Get Google Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2608,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Workflow Configuration').first().json.facebookApiUrl }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "since",
+              "value": "={{ $now.minus({ days: 1 }).toUnixInteger() }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ FACEBOOK_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "a747cd01-667d-4a8e-94e3-e967a7af5a8a",
+      "name": "Get Facebook Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2608,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Workflow Configuration').first().json.trustpilotApiUrl }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "createdSince",
+              "value": "={{ $now.minus({ days: 1 }).toISO() }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ TRUSTPILOT_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "f410c3c5-b5ba-440b-9884-7f36c4f2753c",
+      "name": "Get Trustpilot Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2608,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Workflow Configuration').first().json.yelpApiUrl }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "start_date",
+              "value": "={{ $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YELP_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "a5ef0d89-f0f3-4f97-bbb9-d7d209c0deca",
+      "name": "Get Yelp Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2608,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 4,
+        "options": {}
+      },
+      "id": "73498f52-4fc6-4a91-87b9-bcf69f82b04b",
+      "name": "Merge All Reviews",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2384,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "reviewData",
+              "value": "={{ JSON.stringify({ platform: $json.platform, location: $json.location, rating: $json.rating, text: $json.text, reviewer_name: $json.reviewer_name, created_at: $json.created_at }) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "9f5c4c39-4968-4c5d-a246-a441307f2305",
+      "name": "Prepare AI Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1936,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{ $json.reviewData }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "instructions": "You are a customer feedback and sentiment analysis assistant. Analyze the provided review and return a JSON object with the following fields:\n- sentiment: \"positive\", \"negative\", or \"neutral\"\n- sentiment_score: a number between -1 (very negative) and 1 (very positive)\n- main_issues: array of key problems mentioned (for negative reviews)\n- main_highlights: array of positive aspects mentioned (for positive reviews)\n- suggested_response_tone: recommended tone for response (e.g., \"apologetic\", \"grateful\", \"professional\")\n- summary: a brief 1-2 sentence summary of the review\n\nReturn ONLY valid JSON, no additional text."
+        }
+      },
+      "id": "c3445357-5fe1-4a16-9c75-adf494747855",
+      "name": "Sentiment Analysis (GPT-4)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -1712,
+        192
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qOezWks7heW547ti",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst output = [];\n\nfor (const item of items) {\n  const aiResponse = JSON.parse(item.json.message.content);\n  const originalData = item.json;\n  \n  // Determine category based on keywords\n  const text = originalData.text ? originalData.text.toLowerCase() : '';\n  let category = 'general';\n  \n  if (text.includes('service') || text.includes('staff') || text.includes('employee')) {\n    category = 'service';\n  } else if (text.includes('price') || text.includes('cost') || text.includes('expensive')) {\n    category = 'price';\n  } else if (text.includes('product') || text.includes('quality') || text.includes('food')) {\n    category = 'product';\n  } else if (text.includes('experience') || text.includes('atmosphere') || text.includes('ambiance')) {\n    category = 'experience';\n  }\n  \n  output.push({\n    json: {\n      platform: originalData.platform,\n      rating: originalData.rating,\n      text: originalData.text,\n      created_at: originalData.created_at,\n      reviewer_name: originalData.reviewer_name,\n      review_url: originalData.review_url,\n      location: originalData.location,\n      sentiment: aiResponse.sentiment,\n      sentiment_score: aiResponse.sentiment_score,\n      category: category,\n      is_negative: aiResponse.sentiment === 'negative',\n      main_issues: aiResponse.main_issues || [],\n      main_highlights: aiResponse.main_highlights || [],\n      suggested_response_tone: aiResponse.suggested_response_tone,\n      summary: aiResponse.summary\n    }\n  });\n}\n\nreturn output;"
+      },
+      "id": "45e27bda-c69b-47fc-93e0-64c5e125a4fd",
+      "name": "Categorize & Parse AI Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.is_negative }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "330e8975-b4ce-4f32-9bfa-ea9b61c0a3d8",
+      "name": "Check If Negative",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1136,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.slackChannel }}"
+        },
+        "text": "=🚨 *Negative Review Alert*\n\n*Platform:* {{ $json.platform }}\n*Location:* {{ $json.location }}\n*Rating:* {{ $json.rating }}/5 ⭐\n*Reviewer:* {{ $json.reviewer_name }}\n*Date:* {{ $json.created_at }}\n\n*Summary:* {{ $json.summary }}\n\n*Main Issues:*\n• {{ $json.main_issues.join('\\n• ') }}\n\n*Suggested Response Tone:* {{ $json.suggested_response_tone }}\n\n*Review Link:* {{ $json.review_url }}",
+        "otherOptions": {}
+      },
+      "id": "d9597af8-fe23-414a-bf44-195a76bb5895",
+      "name": "Alert - Negative Review",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -848,
+        128
+      ],
+      "webhookId": "f5c9887a-b3b1-4a29-a6e7-0e15a29242ac",
+      "credentials": {
+        "slackApi": {
+          "id": "aV8dmp4JPT96dIse",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsDocumentId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsSheetName }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json.created_at }}",
+            "platform": "={{ $json.platform }}",
+            "location": "={{ $json.location }}",
+            "rating": "={{ $json.rating }}",
+            "sentiment": "={{ $json.sentiment }}",
+            "sentiment_score": "={{ $json.sentiment_score }}",
+            "category": "={{ $json.category }}",
+            "summary": "={{ $json.summary }}",
+            "review_url": "={{ $json.review_url }}",
+            "raw_text": "={{ $json.text }}"
+          },
+          "matchingColumns": [
+            "date"
+          ],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment_score",
+              "displayName": "sentiment_score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_url",
+              "displayName": "review_url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_text",
+              "displayName": "raw_text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eeb267fa-abf9-4a30-8105-2a8caf3102b1",
+      "name": "Log Review to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -560,
+        208
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "bFhfsO5dYdRTOWJu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $now.weekday }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "204bac1e-70ec-4149-84a5-bf20a8c8de69",
+      "name": "Check If Monday (Weekly Report)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1936,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsDocumentId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsSheetName }}"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "date",
+              "lookupValue": "={{ $now.minus({ days: 7 }).toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cfbdae57-d0b0-4f8a-b77b-0dbcc0781950",
+      "name": "Get Last 7 Days Reviews",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1648,
+        416
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "bFhfsO5dYdRTOWJu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "platform"
+            },
+            {
+              "fieldToAggregate": "sentiment"
+            },
+            {
+              "fieldToAggregate": "category"
+            },
+            {
+              "fieldToAggregate": "main_issues"
+            },
+            {
+              "fieldToAggregate": "main_highlights"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4ce56911-f979-4793-8cc1-0295e243e866",
+      "name": "Aggregate Weekly Stats",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst data = items[0].json;\n\n// Count reviews per platform\nconst platformCounts = {};\ndata.platform.forEach(p => {\n  platformCounts[p] = (platformCounts[p] || 0) + 1;\n});\n\n// Calculate sentiment breakdown\nconst sentimentCounts = { positive: 0, negative: 0, neutral: 0 };\ndata.sentiment.forEach(s => {\n  sentimentCounts[s] = (sentimentCounts[s] || 0) + 1;\n});\n\nconst totalReviews = data.sentiment.length;\nconst sentimentPercentages = {\n  positive: ((sentimentCounts.positive / totalReviews) * 100).toFixed(1),\n  negative: ((sentimentCounts.negative / totalReviews) * 100).toFixed(1),\n  neutral: ((sentimentCounts.neutral / totalReviews) * 100).toFixed(1)\n};\n\n// Extract top issues and highlights\nconst allIssues = data.main_issues.flat().filter(i => i);\nconst allHighlights = data.main_highlights.flat().filter(h => h);\n\nconst issueFrequency = {};\nallIssues.forEach(issue => {\n  issueFrequency[issue] = (issueFrequency[issue] || 0) + 1;\n});\n\nconst highlightFrequency = {};\nallHighlights.forEach(highlight => {\n  highlightFrequency[highlight] = (highlightFrequency[highlight] || 0) + 1;\n});\n\nconst topIssues = Object.entries(issueFrequency)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 5)\n  .map(([issue, count]) => `${issue} (${count} mentions)`);\n\nconst topHighlights = Object.entries(highlightFrequency)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 5)\n  .map(([highlight, count]) => `${highlight} (${count} mentions)`);\n\nreturn [{\n  json: {\n    totalReviews,\n    platformCounts,\n    sentimentCounts,\n    sentimentPercentages,\n    topIssues,\n    topHighlights\n  }\n}];"
+      },
+      "id": "d5d030b4-6e12-4bd4-90d6-272978a18695",
+      "name": "Calculate Weekly Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "mode": "id",
+          "value": "gpt-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "instructions": "You are a business intelligence analyst. Based on the weekly review metrics provided, create a concise executive summary (200-300 words) that includes:\n\n1. Overall sentiment trend and key statistics\n2. Platform-specific insights\n3. Top customer wins (positive highlights)\n4. Critical issues requiring attention\n5. 3-5 actionable recommendations for management\n\nWrite in a professional, data-driven tone suitable for senior management."
+        }
+      },
+      "id": "5802ca48-d00f-4f75-a3af-c091bc6553b9",
+      "name": "Generate Weekly Summary (GPT-4)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        416
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qOezWks7heW547ti",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "sendTo": "={{ $('Workflow Configuration').first().json.managerEmail }}",
+        "subject": "=Weekly Review Summary - {{ $now.toFormat('MMMM dd, yyyy') }}",
+        "message": "=<h2>Weekly Review Summary</h2>\n<p><strong>Period:</strong> {{ $now.minus({ days: 7 }).toFormat('MMM dd') }} - {{ $now.toFormat('MMM dd, yyyy') }}</p>\n\n<h3>📊 Key Metrics</h3>\n<ul>\n<li><strong>Total Reviews:</strong> {{ $('Calculate Weekly Metrics').item.json.totalReviews }}</li>\n<li><strong>Positive:</strong> {{ $('Calculate Weekly Metrics').item.json.sentimentPercentages.positive }}%</li>\n<li><strong>Negative:</strong> {{ $('Calculate Weekly Metrics').item.json.sentimentPercentages.negative }}%</li>\n<li><strong>Neutral:</strong> {{ $('Calculate Weekly Metrics').item.json.sentimentPercentages.neutral }}%</li>\n</ul>\n\n<h3>🎯 Platform Breakdown</h3>\n<ul>\n{{ Object.entries($('Calculate Weekly Metrics').item.json.platformCounts).map(([platform, count]) => `<li>${platform}: ${count} reviews</li>`).join('\\n') }}\n</ul>\n\n<h3>✅ Top Positive Highlights</h3>\n<ol>\n{{ $('Calculate Weekly Metrics').item.json.topHighlights.map(h => `<li>${h}</li>`).join('\\n') }}\n</ol>\n\n<h3>⚠️ Top Issues</h3>\n<ol>\n{{ $('Calculate Weekly Metrics').item.json.topIssues.map(i => `<li>${i}</li>`).join('\\n') }}\n</ol>\n\n<h3>💡 AI-Generated Summary</h3>\n<p>{{ $json.message.content }}</p>\n\n<hr>\n<p><em>This report was automatically generated by the Multi-Platform Review Aggregator workflow.</em></p>",
+        "options": {}
+      },
+      "id": "9d8ccc21-90fd-473f-adf6-606c5c9bf2c1",
+      "name": "Send Weekly Email Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        416
+      ],
+      "webhookId": "af88c821-9806-4eb7-8f06-00ff06e75a2d",
+      "credentials": {
+        "googleApi": {
+          "id": "bFhfsO5dYdRTOWJu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst output = [];\n\nfor (const item of items) {\n  const data = item.json;\n  let normalized = {};\n  \n  // Detect platform and normalize accordingly\n  if (data.starRating !== undefined && data.reviewer && data.reviewer.displayName) {\n    // Google Review\n    normalized = {\n      platform: 'Google',\n      rating: data.starRating,\n      text: data.comment || '',\n      created_at: data.createTime || '',\n      reviewer_name: data.reviewer.displayName || '',\n      review_url: data.name ? `https://www.google.com/maps/reviews/${data.name}` : '',\n      location: data.name || ''\n    };\n  } else if (data.rating !== undefined && data.review_text !== undefined && data.reviewer) {\n    // Facebook Review\n    normalized = {\n      platform: 'Facebook',\n      rating: data.rating,\n      text: data.review_text || '',\n      created_at: data.created_time || '',\n      reviewer_name: data.reviewer.name || '',\n      review_url: data.open_graph_story ? data.open_graph_story.id : '',\n      location: data.page ? data.page.name : ''\n    };\n  } else if (data.stars !== undefined && data.text !== undefined && data.consumer) {\n    // Trustpilot Review\n    normalized = {\n      platform: 'Trustpilot',\n      rating: data.stars,\n      text: data.text || '',\n      created_at: data.createdAt || '',\n      reviewer_name: data.consumer.displayName || '',\n      review_url: data.links ? data.links[0].href : '',\n      location: data.businessUnit ? data.businessUnit.displayName : ''\n    };\n  } else if (data.rating !== undefined && data.text !== undefined && data.user) {\n    // Yelp Review\n    normalized = {\n      platform: 'Yelp',\n      rating: data.rating,\n      text: data.text || '',\n      created_at: data.time_created || '',\n      reviewer_name: data.user.name || '',\n      review_url: data.url || '',\n      location: data.business ? data.business.name : ''\n    };\n  } else {\n    // Unknown format - pass through with generic mapping\n    normalized = {\n      platform: data.platform || 'Unknown',\n      rating: data.rating || 0,\n      text: data.text || '',\n      created_at: data.created_at || '',\n      reviewer_name: data.reviewer_name || '',\n      review_url: data.review_url || '',\n      location: data.location || ''\n    };\n  }\n  \n  output.push({ json: normalized });\n}\n\nreturn output;"
+      },
+      "id": "0919904a-ac95-46e5-9ba7-5eb4fc738d7f",
+      "name": "Normalize All Reviews",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2160,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "content": "This workflow collects reviews from Google, Facebook, Trustpilot, and Yelp, analyzes sentiment with AI, alerts on negative feedback, and sends a weekly summary.\n\n## Key Nodes\n\n- **Daily Schedule - 09:00**: Triggers workflow daily.\n- **Get Google/Facebook/Trustpilot/Yelp Reviews**: Fetches new reviews from each platform.\n- **Merge All Reviews**: Combines all reviews.\n- **Normalize All Reviews**: Standardizes review data.\n- **Sentiment Analysis (GPT-4)**: Analyzes sentiment and extracts insights.\n- **Alert - Negative Review**: Sends Slack alert for negative reviews.\n- **Log Review to Sheet**: Saves reviews to Google Sheets.\n- **Weekly Report Nodes**: Aggregates weekly stats and emails a summary.\n\n\nAutomates review collection, AI analysis, negative feedback alerts, and weekly reporting.",
+        "height": 1072,
+        "width": 2720,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3104,
+        -368
+      ],
+      "typeVersion": 1,
+      "id": "6c97c292-7521-4092-a8ed-0704eae359f5",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule - 09:00": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Get Google Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Facebook Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Trustpilot Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Yelp Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Google Reviews": {
+      "main": [
+        [
+          {
+            "node": "Merge All Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Facebook Reviews": {
+      "main": [
+        [
+          {
+            "node": "Merge All Reviews",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Trustpilot Reviews": {
+      "main": [
+        [
+          {
+            "node": "Merge All Reviews",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Yelp Reviews": {
+      "main": [
+        [
+          {
+            "node": "Merge All Reviews",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge All Reviews": {
+      "main": [
+        [
+          {
+            "node": "Normalize All Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Input": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis (GPT-4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis (GPT-4)": {
+      "main": [
+        [
+          {
+            "node": "Categorize & Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorize & Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Check If Negative",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Negative": {
+      "main": [
+        [
+          {
+            "node": "Alert - Negative Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Review to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert - Negative Review": {
+      "main": [
+        [
+          {
+            "node": "Log Review to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Monday (Weekly Report)": {
+      "main": [
+        [
+          {
+            "node": "Get Last 7 Days Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last 7 Days Reviews": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Weekly Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Weekly Stats": {
+      "main": [
+        [
+          {
+            "node": "Calculate Weekly Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Weekly Metrics": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly Summary (GPT-4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly Summary (GPT-4)": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize All Reviews": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Input",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check If Monday (Weekly Report)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2a8c0ad5-9d80-4b33-9d1c-72942e5117f8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c2d487d22eb340f8f43c55ff61f8c69909cb5c9301a99030a4a4ab5908a80ca6"
+  },
+  "id": "AxLn7TZTMgUNAc4L",
+  "tags": []
+}
